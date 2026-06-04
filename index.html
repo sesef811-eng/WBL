@@ -88,7 +88,7 @@
             <a onclick="navigateTo('home')">الرئيسية</a>
             <a onclick="navigateTo('explore')">استكشاف</a>
             <a onclick="navigateTo('mylibrary')">مكتبتي</a>
-            <a onclick="navigateTo('publish')">نشر عمل</a>
+            <a onclick="showPublishPage()">نشر عمل</a>
             <div class="auth-buttons" id="authButtons"></div>
             <button class="theme-toggle" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
         </div>
@@ -180,7 +180,7 @@
     function filterExploreByGenre(genre) { let filtered=allBooks; if(genre!=='الكل') filtered=filtered.filter(b=>(b.genres||[]).includes(genre)); document.getElementById('exploreGrid').innerHTML=filtered.map(b=>renderBookCard(b)).join(''); }
 
     // -------------------- Favorites & Rating --------------------
-    async function toggleFavorite(bookId) { if(!currentUser){openAuthModal();return;} const was=userFavorites.includes(bookId); userFavorites=was?userFavorites.filter(i=>i!==bookId):[...userFavorites,bookId]; await db.collection('favorites').doc(currentUser.uid).set({books:userFavorites}); showToast(was?'أزيلت من المفضلة':'أضيفت للمفضلة'); renderHome(); renderExplore(); if(document.getElementById('detailPage')&&!document.getElementById('detailPage').classList.contains('hidden-page')&¤tBookId===bookId) showBookDetail(bookId); if(!document.getElementById('mylibraryPage').classList.contains('hidden-page')) renderLibrary(); }
+    async function toggleFavorite(bookId) { if(!currentUser){openAuthModal();return;} const was=userFavorites.includes(bookId); userFavorites=was?userFavorites.filter(i=>i!==bookId):[...userFavorites,bookId]; await db.collection('favorites').doc(currentUser.uid).set({books:userFavorites}); showToast(was?'أزيلت من المفضلة':'أضيفت للمفضلة'); renderHome(); renderExplore(); if(document.getElementById('detailPage')&&!document.getElementById('detailPage').classList.contains('hidden-page')currentBookId===bookId) showBookDetail(bookId); if(!document.getElementById('mylibraryPage').classList.contains('hidden-page')) renderLibrary(); }
     async function rateBook(bookId,val){ if(!currentUser){openAuthModal();return;} const id=`${currentUser.uid}_${bookId}`; const exist=await db.collection('ratings').doc(id).get(); if(exist.exists) await db.collection('ratings').doc(id).update({value:val}); else await db.collection('ratings').doc(id).set({userId:currentUser.uid,bookId,value:val}); const snap=await db.collection('ratings').where('bookId','==',bookId).get(); let sum=0,count=0; snap.forEach(d=>{sum+=d.data().value; count++;}); const avg=count?sum/count:0; await db.collection('books').doc(bookId).update({rating:avg,ratingCount:count}); showToast('تم التقييم'); await loadBooks(); if(currentBookId===bookId) showBookDetail(bookId); }
 
     // -------------------- Book Detail & Comments --------------------
@@ -192,7 +192,7 @@
     async function openReader(bookId,chapterId=null){ if(!currentUser){openAuthModal();return;} if(!userReading.includes(bookId)){ userReading.push(bookId); await db.collection('readingProgress').doc(currentUser.uid).set({books:userReading}); } const book=allBooks.find(b=>b.id===bookId); let target=chapterId; if(!target){ const first=await db.collection('chapters').where('bookId','==',bookId).orderBy('number').limit(1).get(); if(first.empty){showToast('لا توجد فصول بعد'); return;} target=first.docs[0].id; } const chap=await db.collection('chapters').doc(target).get(); const c=chap.data(); const html=`<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;"><h2>${book.title} - الفصل ${c.number}: ${c.title}</h2><div class="reader-content" style="margin:2rem 0;">${c.content}</div><button class="btn-outline" onclick="showBookDetail('${bookId}')">← العودة للكتاب</button></div>`; document.getElementById('readingPage').innerHTML=html; navigateTo('reading'); }
 
     // -------------------- Publish New Book (basic info) --------------------
-    function showPublishPage() { if(!currentUser){openAuthModal();return;} selectedGenres=[]; const html=`<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;"><h2>📝 نشر كتاب جديد</h2><div class="form-group"><label>عنوان الكتاب</label><input id="pubTitle" placeholder="مثال: أسطورة التنين"></div><div class="form-group"><label>وصف مختصر</label><textarea id="pubDesc" rows="3" placeholder="نبذة عن الكتاب..."></textarea></div><div class="form-group"><label>رابط صورة الغلاف (URL)</label><input id="pubCover" placeholder="https://example.com/cover.jpg"></div><div class="form-group"><label>التصنيفات</label><div id="genresPicker" class="genres-picker"></div></div><button class="btn-primary" onclick="createNewBook()">إنشاء الكتاب والانتقال لإدارة الفصول</button></div>`; document.getElementById('publishPage').innerHTML=html; const genresList=['أكشن','فانتازيا','غموض','دراما','رومانسية','رعب','خيال علمي','مغامرات']; const picker=document.getElementById('genresPicker'); picker.innerHTML=genresList.map(g=>`<button type="button" class="genre-option" onclick="toggleGenrePick(this,'${g}')">${g}</button>`).join(''); window.toggleGenrePick=(btn,genre)=>{ btn.classList.toggle('active'); if(btn.classList.contains('active')) selectedGenres.push(genre); else selectedGenres=selectedGenres.filter(g=>g!==genre); }; navigateTo('publish'); }
+    function showPublishPage() { if(!currentUser){openAuthModal();return;} selectedGenres=[]; const html=`<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;"><h2>📝 نشر كتاب جديد</h2><div class="form-group"><label>عنوان الكتاب</label><input id="pubTitle" placeholder="مثال: أسطورة التنين"></div><div class="form-group"><label>وصف مختصر</label><textarea id="pubDesc" rows="3" placeholder="نبذة عن الكتاب..."></textarea></div><div class="form-group"><label>رابط صورة الغلاف (URL)</label><input id="pubCover" placeholder="https://example.com/cover.jpg"></div><div class="form-group"><label>التصنيفات</label><div id="genresPicker" class="genres-picker"></div></div><button class="btn-primary" onclick="createNewBook()">إنشاء الكتاب والانتقال لإدارة الفصول</button></div>`; document.getElementById('publishPage').innerHTML=html; const genresList=['أكشن','فانتازيا','غموض','دراما','رومانسية','رعب','خيال علمي','مغامرات']; const picker=document.getElementById('genresPicker'); picker.innerHTML=genresList.map(g=>`<button type="button" class="genre-option" onclick="toggleGenrePick(this,'${g}')">${g}</button>`).join(''); window.toggleGenrePick=(btn,genre)=>{ btn.classList.toggle('active'); if(btn.classList.contains('active')) selectedGenres.push(genre); else selectedGenres=selectedGenres.filter(g=>g!==genre); }; // navigateTo('publish'); }
     async function createNewBook() { const title=document.getElementById('pubTitle').value.trim(); const desc=document.getElementById('pubDesc').value.trim(); const cover=document.getElementById('pubCover').value.trim(); if(!title||!desc) return showToast('العنوان والوصف مطلوبان'); if(selectedGenres.length===0) return showToast('اختر تصنيفاً واحداً على الأقل'); const bookRef=await db.collection('books').add({ title, description:desc, coverUrl:cover||'https://picsum.photos/id/20/200/300', authorId:currentUser.uid, authorName:currentUser.displayName||currentUser.email, genres:selectedGenres, views:0, rating:0, ratingCount:0, chaptersCount:0, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); showToast('تم إنشاء الكتاب! يمكنك الآن إضافة فصول'); await loadBooks(); manageChapters(bookRef.id); }
 
     // -------------------- Advanced Chapter Management (Quill, Drag & Drop, Auto-save, Preview) --------------------
@@ -208,7 +208,45 @@
     function showProfile() { if(!currentUser) return; const html=`<div style="background:var(--surface); border-radius:1rem; padding:1.5rem; text-align:center;"><i class="fas fa-user-circle" style="font-size:4rem; color:var(--primary);"></i><h2>${currentUser.displayName||currentUser.email}</h2><p>${currentUser.email}</p><button class="btn-primary" onclick="signOut()">تسجيل الخروج</button></div>`; document.getElementById('profilePage').innerHTML=html; navigateTo('profile'); }
 
     // -------------------- Navigation & Dark Mode --------------------
-    function navigateTo(page){ const pages=['homePage','explorePage','mylibraryPage','publishPage','detailPage','readingPage','manageChaptersPage','profilePage']; pages.forEach(p=>{const el=document.getElementById(p); if(el) el.classList.add('hidden-page');}); document.getElementById(page).classList.remove('hidden-page'); if(page==='home') renderHome(); else if(page==='explore') renderExplore(); else if(page==='mylibrary') renderLibrary(); else if(page==='publish') showPublishPage(); else if(page==='profile') showProfile(); window.scrollTo(0,0); }
+    function navigateTo(page){
+
+    const pages = [
+        'homePage',
+        'explorePage',
+        'mylibraryPage',
+        'publishPage',
+        'detailPage',
+        'readingPage',
+        'manageChaptersPage',
+        'profilePage'
+    ];
+
+    pages.forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.classList.add('hidden-page');
+    });
+
+    const pageMap={
+        home:'homePage',
+        explore:'explorePage',
+        mylibrary:'mylibraryPage',
+        publish:'publishPage',
+        detail:'detailPage',
+        reading:'readingPage',
+        manageChapters:'manageChaptersPage',
+        profile:'profilePage'
+    };
+
+    const target=document.getElementById(pageMap[page]);
+    if(target) target.classList.remove('hidden-page');
+
+    if(page==='home') renderHome();
+    else if(page==='explore') renderExplore();
+    else if(page==='mylibrary') renderLibrary();
+    else if(page==='profile') showProfile();
+
+    window.scrollTo(0,0);
+}
     function toggleDarkMode(){ document.body.classList.toggle('dark'); localStorage.setItem('darkMode',document.body.classList.contains('dark')); }
     if(localStorage.getItem('darkMode')==='true') document.body.classList.add('dark');
     auth.onAuthStateChanged(async user=>{ currentUser=user; updateAuthUI(); if(user) await loadUserData(); await loadBooks(); if(user && document.getElementById('detailPage') && !document.getElementById('detailPage').classList.contains('hidden-page') && currentBookId) showBookDetail(currentBookId); });
