@@ -3,98 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>WBL | منصة النشر - قاعدة بيانات فقط (لا تخزين ملفات)</title>
+    <title>WBL | منصة النشر - إصدار محترف (مظلم بالكامل)</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <!-- DOMPurify -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-    <!-- Quill Editor -->
+    <!-- Quill Editor مع إضافات -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <!-- إضافات Quill (اختياري للون الخلفية وحجم الخط) -->
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-drop-module@1.0.3/image-drop.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg: #f8fafc; --surface: #ffffff; --card: #ffffff; --text: #0f172a;
-            --text-light: #475569; --border: #e2e8f0; --primary: #6366f1;
-            --primary-dark: #4f46e5; --accent: #06b6d4; --danger: #ef4444;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --radius: 1rem;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        body.dark { --bg: #0f172a; --surface: #1e293b; --card: #334155; --text: #f1f5f9; --text-light: #cbd5e1; --border: #334155; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; line-height: 1.5; }
-        .container { max-width: 1300px; margin: 0 auto; padding: 0 1.5rem; }
-        button, .btn { cursor: pointer; font-family: inherit; transition: 0.2s; }
-        header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
-        .header-inner { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; max-width: 1300px; margin: 0 auto; gap: 1rem; flex-wrap: wrap; }
-        .logo { font-size: 1.7rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--accent)); background-clip: text; -webkit-background-clip: text; color: transparent; cursor: pointer; }
-        .nav-links { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
-        .nav-links a { text-decoration: none; font-weight: 600; color: var(--text-light); cursor: pointer; font-size: 0.95rem; }
-        .nav-links a:hover { color: var(--primary); }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 2rem; font-weight: 600; }
-        .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 0.5rem 1.2rem; border-radius: 2rem; font-weight: 600; }
-        .btn-outline:hover { background: var(--primary); color: white; }
-        .theme-toggle { background: var(--surface); border: 1px solid var(--border); border-radius: 2rem; padding: 0.4rem 0.8rem; cursor: pointer; color: var(--text); }
-        .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
-        .book-card { background: var(--card); border-radius: var(--radius); overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; box-shadow: var(--shadow); }
-        .book-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-        .card-cover { aspect-ratio: 2/3; background-size: cover; background-position: center; position: relative; }
-        .favorite-icon { position: absolute; bottom: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.6); border-radius: 50%; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(2px); }
-        .favorite-icon.active { color: var(--danger); }
-        .card-info { padding: 0.75rem; text-align: center; }
-        .card-title { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-author { font-size: 0.75rem; color: var(--text-light); }
-        .rating-stars { color: #fbbf24; font-size: 0.7rem; margin: 0.25rem 0; display: flex; justify-content: center; gap: 2px; direction: ltr; }
-        .search-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 3rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-        .search-bar input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: inherit; }
-        .filter-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; justify-content: center; }
-        .filter-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 2rem; padding: 0.3rem 1rem; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
-        .filter-chip.active, .filter-chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        .hidden-page { display: none !important; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal.active { display: flex; }
-        .modal-content { background: var(--surface); border-radius: 1.5rem; padding: 1.5rem; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.85rem; }
-        input, textarea, select { width: 100%; padding: 0.6rem 0.8rem; border-radius: 0.8rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; outline: none; }
-        input:focus, textarea:focus { border-color: var(--primary); }
-        .genres-picker { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
-        .genre-option { background: var(--bg); border: 1px solid var(--border); border-radius: 2rem; padding: 0.2rem 0.8rem; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
-        .genre-option.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .toast { position: fixed; bottom: 1rem; left: 1rem; background: #1e293b; color: white; padding: 0.6rem 1.2rem; border-radius: 2rem; z-index: 1100; font-size: 0.85rem; animation: fadeInUp 0.3s ease; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .chapter-item { background: var(--bg); padding: 0.8rem; border-radius: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; cursor: move; transition: 0.2s; }
-        .chapter-item:hover { background: var(--border); }
-        .ql-editor { min-height: 250px; font-size: 1rem; }
-        .ql-toolbar { direction: ltr; border-radius: 0.8rem 0.8rem 0 0; }
-        .ql-container { border-radius: 0 0 0.8rem 0.8rem; }
-        .reader-content { line-height: 1.8; font-size: 1rem; }
-        .reader-content img { max-width: 100%; height: auto; }
-        footer { text-align: center; padding: 1.5rem; border-top: 1px solid var(--border); margin-top: 3rem; font-size: 0.8rem; color: var(--text-light); }
-        .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: var(--primary); animation: spin 0.8s linear infinite; margin: 1rem auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 640px) { .container { padding: 0 1rem; } .books-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; } }
-        .preview-content { background: var(--bg); padding: 1rem; border-radius: 1rem; margin-top: 1rem; max-height: 300px; overflow-y: auto; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .reader-nav { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+
+        /* نظام الألوان المظلم فقط */
+        :root {
+            --bg: #0a0c10;
+            --surface: #1e1e2a;
+            --card: #252530;
+            --text: #eef2ff;
+            --text-light: #a0aec0;
+            --border: #2d2d3a;
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --accent: #06b6d4;
+            --danger: #f43f5e;
+            --success: #10b981;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --radius: 0.75rem;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem;
+        }
+
+        /* تحسين التمرير */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* أزرار وعناصر تفاعلية */
+        button, .btn {
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            max-width: 1300px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* بطاقات الكتب */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 1.8rem;
+            margin: 2rem 0;
+        }
+
+        .book-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow);
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary);
+        }
+
+        .card-cover {
+            aspect-ratio: 2/3;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .favorite-icon {
+            position: absolute;
+            bottom: 0.7rem;
+            right: 0.7rem;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            color: white;
+        }
+
+        .favorite-icon.active {
+            color: var(--danger);
+        }
+
+        .card-info {
+            padding: 0.8rem;
+            text-align: center;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-author {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .rating-stars {
+            color: #fbbf24;
+            font-size: 0.7rem;
+            margin: 0.25rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            direction: ltr;
+        }
+
+        /* بحث وفلاتر */
+        .search-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 3rem;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1rem 0;
+            justify-content: center;
+        }
+
+        .filter-chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 0.3rem 1rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .filter-chip.active, .filter-chip:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* فئات مساعدة */
+        .hidden-page {
+            display: none !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(6px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 1.2rem;
+            padding: 1.8rem;
+            width: 90%;
+            max-width: 850px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        /* النماذج */
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 0.8rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        /* اختيار التصنيفات */
+        .genres-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+
+        .genre-option {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 0.3rem 1rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+
+        .genre-option.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* التنبيهات */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            background: var(--surface);
+            color: var(--text);
+            padding: 0.7rem 1.3rem;
+            border-radius: 2rem;
+            z-index: 1100;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow);
+            border-right: 4px solid var(--primary);
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* عناصر الفصول (السحب) */
+        .chapter-item {
+            background: var(--bg);
+            padding: 0.8rem;
+            border-radius: 0.8rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+            transition: 0.2s;
+            border: 1px solid var(--border);
+        }
+
+        .chapter-item:active {
+            cursor: grabbing;
+        }
+
+        .chapter-item:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+        }
+
+        /* محرر Quill متقدم */
+        .ql-editor {
+            min-height: 300px;
+            font-size: 1rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .ql-toolbar {
+            direction: ltr;
+            border-radius: 0.8rem 0.8rem 0 0;
+            background: var(--surface);
+            border-color: var(--border);
+        }
+
+        .ql-container {
+            border-radius: 0 0 0.8rem 0.8rem;
+            border-color: var(--border);
+        }
+
+        .ql-editor p, .ql-editor h1, .ql-editor h2 {
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* وضع القراءة */
+        .reader-content {
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .reader-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+
+        /* أزرار التنقل بين الفصول */
+        .reader-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem;
+        }
+
+        /* قسم النشر: كتب المستخدم */
+        .user-books-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .user-book-item {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        /* تحسين التمرير العام */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+            .container { padding: 0 1rem; }
+            .books-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+        }
     </style>
 </head>
 <body>
 <header>
     <div class="header-inner">
-        <div class="logo" onclick="navigateTo('home')">WBL | قاعدة بيانات فقط (لا تخزين)</div>
+        <div class="logo" onclick="navigateTo('home')">WBL | محترف (مظلم)</div>
         <div class="nav-links">
             <a onclick="navigateTo('home')">الرئيسية</a>
             <a onclick="navigateTo('explore')">استكشاف</a>
             <a onclick="navigateTo('mylibrary')">مكتبتي</a>
             <a onclick="navigateTo('publish')">نشر عمل</a>
             <div class="auth-buttons" id="authButtons"></div>
-            <button class="theme-toggle" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
         </div>
     </div>
 </header>
@@ -118,7 +546,7 @@
     <div id="manageChaptersPage" class="hidden-page"></div>
     <div id="profilePage" class="hidden-page"></div>
 </main>
-<footer>© 2026 WBL - تخزين الفصول في قاعدة البيانات فقط (بدون Storage) | أزرار تالي/سابق تعمل</footer>
+<footer>© 2026 WBL - إصدار محترف (محرر متقدم، مظلم بالكامل، تنقل سلس بين الفصول)</footer>
 
 <script>
     // -------------------- إعدادات Firebase --------------------
@@ -277,7 +705,7 @@
             allBooks = snap.docs.map(d=>({id:d.id, ...d.data()}));
             renderHome();
             renderExplore();
-            if(document.getElementById('mylibraryPage') && !document.getElementById('mylibraryPage').classList.contains('hidden-page')) renderLibrary();
+            if(!document.getElementById('mylibraryPage').classList.contains('hidden-page')) renderLibrary();
         } catch(e) {
             console.error(e);
             showToast('خطأ في تحميل الكتب: '+e.message);
@@ -289,7 +717,7 @@
     function renderBookCard(book, isFav=null) {
         const fav = (isFav!==null) ? isFav : userFavorites.includes(book.id);
         let stars=''; 
-        for(let i=1;i<=5;i++) stars+=`<i class="fas fa-star" style="color:${i<=Math.floor(book.rating||0)?'#fbbf24':'#cbd5e1'}"></i>`;
+        for(let i=1;i<=5;i++) stars+=`<i class="fas fa-star" style="color:${i<=Math.floor(book.rating||0)?'#fbbf24':'#4b5563'}"></i>`;
         return `<div class="book-card" onclick="showBookDetail('${book.id}')"><div class="card-cover" style="background-image:url('${escapeHtml(book.coverUrl||'https://picsum.photos/id/104/200/300')}')"><div class="favorite-icon ${fav?'active':''}" onclick="event.stopPropagation(); toggleFavorite('${book.id}')"><i class="fas fa-heart"></i></div></div><div class="card-info"><div class="card-title">${escapeHtml(book.title||'بدون عنوان')}</div><div class="card-author">${escapeHtml(book.authorName||'مجهول')}</div><div class="rating-stars">${stars} (${(book.rating||0).toFixed(1)})</div></div></div>`;
     }
     function renderHome() { 
@@ -351,7 +779,6 @@
         currentBookId=bookId; 
         const book=allBooks.find(b=>b.id===bookId); 
         if(!book) return; 
-        // زيادة عدد المشاهدات
         await db.collection('books').doc(bookId).update({views: firebase.firestore.FieldValue.increment(1)}); 
         const chapters = await getBookChapters(bookId);
         let userRating=0; 
@@ -360,9 +787,9 @@
             if(r.exists) userRating=r.data().value; 
         } 
         let ratingStars=''; 
-        for(let i=1;i<=5;i++) ratingStars+=`<i class="fas fa-star" style="cursor:pointer; color:${i<=userRating?'#fbbf24':'#cbd5e1'}; margin:0 3px;" onclick="rateBook('${bookId}',${i})"></i>`; 
+        for(let i=1;i<=5;i++) ratingStars+=`<i class="fas fa-star" style="cursor:pointer; color:${i<=userRating?'#fbbf24':'#4b5563'}; margin:0 3px;" onclick="rateBook('${bookId}',${i})"></i>`; 
         const chaptersHtml=chapters.map(ch=>`<div class="chapter-item" style="cursor:pointer;" onclick="openReaderWithChapters('${bookId}', ${ch.number})"><span>📖 الفصل ${ch.number}: ${escapeHtml(ch.title)}</span><i class="fas fa-arrow-left"></i></div>`).join(''); 
-        const html=`<div style="background:var(--surface); border-radius:1.5rem; padding:1.5rem;"><div style="display:flex; gap:1.5rem; flex-wrap:wrap;"><img src="${escapeHtml(book.coverUrl||'https://picsum.photos/id/104/200/300')}" style="width:150px; height:225px; object-fit:cover; border-radius:1rem;" loading="lazy"><div style="flex:1;"><h1>${escapeHtml(book.title)}</h1><p style="color:var(--primary);">✍️ ${escapeHtml(book.authorName)}</p><div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.5rem 0;">${(book.genres||[]).map(g=>`<span style="background:var(--bg); padding:0.2rem 0.8rem; border-radius:2rem;">${escapeHtml(g)}</span>`).join('')}</div><p>⭐ ${(book.rating||0).toFixed(1)} | 👁️ ${book.views||0}</p><p>${escapeHtml(book.description||'لا يوجد وصف')}</p><div style="display:flex; gap:0.8rem; flex-wrap:wrap;"><button class="btn-primary" onclick="openReaderWithChapters('${bookId}')">📖 ابدأ القراءة</button><button class="btn-outline" onclick="toggleFavorite('${bookId}')">❤️ ${userFavorites.includes(bookId)?'مفضلة':'أضف للمفضلة'}</button>${currentUser && currentUser.uid===book.authorId?`<button class="btn-outline" onclick="manageChapters('${bookId}')">📝 إدارة الفصول</button>`:''}</div></div></div><hr style="margin:1.5rem 0;"><h3>تقييمك للكتاب</h3><div style="margin:0.5rem 0 1rem;">${ratingStars}</div><h3>📑 الفصول (${chapters.length})</h3>${chaptersHtml||'<p>لم يتم إضافة فصول بعد</p>'}<h3 style="margin-top:1.5rem;">💬 التعليقات</h3><div id="commentsList" style="margin:1rem 0;"></div><button class="btn-outline" onclick="addComment('${bookId}')">➕ أضف تعليقاً</button><button id="loadMoreCommentsBtn" class="btn-outline" style="margin-top:0.5rem;">تحميل المزيد</button></div>`; 
+        const html=`<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;"><div style="display:flex; gap:1.5rem; flex-wrap:wrap;"><img src="${escapeHtml(book.coverUrl||'https://picsum.photos/id/104/200/300')}" style="width:150px; height:225px; object-fit:cover; border-radius:0.8rem;" loading="lazy"><div style="flex:1;"><h1>${escapeHtml(book.title)}</h1><p style="color:var(--primary);">✍️ ${escapeHtml(book.authorName)}</p><div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.5rem 0;">${(book.genres||[]).map(g=>`<span style="background:var(--bg); padding:0.2rem 0.8rem; border-radius:2rem;">${escapeHtml(g)}</span>`).join('')}</div><p>⭐ ${(book.rating||0).toFixed(1)} | 👁️ ${book.views||0}</p><p>${escapeHtml(book.description||'لا يوجد وصف')}</p><div style="display:flex; gap:0.8rem; flex-wrap:wrap;"><button class="btn-primary" onclick="openReaderWithChapters('${bookId}')">📖 ابدأ القراءة</button><button class="btn-outline" onclick="toggleFavorite('${bookId}')">❤️ ${userFavorites.includes(bookId)?'مفضلة':'أضف للمفضلة'}</button>${currentUser && currentUser.uid===book.authorId?`<button class="btn-outline" onclick="manageChapters('${bookId}')">📝 إدارة الفصول</button>`:''}</div></div></div><hr style="margin:1.5rem 0; border-color:var(--border);"><h3>تقييمك للكتاب</h3><div style="margin:0.5rem 0 1rem;">${ratingStars}</div><h3>📑 الفصول (${chapters.length})</h3>${chaptersHtml||'<p>لم يتم إضافة فصول بعد</p>'}<h3 style="margin-top:1.5rem;">💬 التعليقات</h3><div id="commentsList" style="margin:1rem 0;"></div><button class="btn-outline" onclick="addComment('${bookId}')">➕ أضف تعليقاً</button><button id="loadMoreCommentsBtn" class="btn-outline" style="margin-top:0.5rem;">تحميل المزيد</button></div>`; 
         document.getElementById('detailPage').innerHTML=html; 
         navigateTo('detail'); 
         commentsLastDoc=null; 
@@ -377,7 +804,7 @@
         const snap=await q.get(); 
         if(snap.empty&&reset){ document.getElementById('commentsList').innerHTML='<p>لا توجد تعليقات بعد</p>'; return; } 
         commentsLastDoc=snap.docs[snap.docs.length-1]; 
-        snap.forEach(d=>{ const c=d.data(); const div=document.createElement('div'); div.style.cssText='background:var(--bg); padding:0.8rem; border-radius:1rem; margin-bottom:0.8rem;'; div.innerHTML=`<strong>${escapeHtml(c.userName)}</strong> <span style="float:left; font-size:0.7rem;">${c.createdAt?.toDate().toLocaleString()||''}</span><p>${escapeHtml(c.text)}</p>`; document.getElementById('commentsList').appendChild(div); }); 
+        snap.forEach(d=>{ const c=d.data(); const div=document.createElement('div'); div.style.cssText='background:var(--bg); padding:0.8rem; border-radius:0.8rem; margin-bottom:0.8rem; border:1px solid var(--border);'; div.innerHTML=`<strong>${escapeHtml(c.userName)}</strong> <span style="float:left; font-size:0.7rem; color:var(--text-light);">${c.createdAt?.toDate().toLocaleString()||''}</span><p style="margin-top:0.4rem;">${escapeHtml(c.text)}</p>`; document.getElementById('commentsList').appendChild(div); }); 
         if(snap.size<8) document.getElementById('loadMoreCommentsBtn').style.display='none'; else document.getElementById('loadMoreCommentsBtn').style.display='inline-block'; 
     }
 
@@ -397,21 +824,18 @@
         loadComments(bookId,true); 
     }
 
-    // -------------------- القارئ مع أزرار تالي/سابق (بدون Storage) --------------------
+    // -------------------- القارئ مع أزرار تالي/سابق (بدون تكرار) --------------------
     async function openReaderWithChapters(bookId, startChapterNumber = null) {
         if(!currentUser){ openAuthModal(); return; }
-        // تسجيل في مكتبتي
         if(!userReading.includes(bookId)){
             userReading.push(bookId);
             await db.collection('readingProgress').doc(currentUser.uid).set({books: userReading});
         }
-        // جلب جميع فصول الكتاب
         currentChaptersList = await getBookChapters(bookId);
         if(currentChaptersList.length === 0) {
             showToast('لا توجد فصول بعد');
             return;
         }
-        // تحديد الفصل المطلوب
         let targetIndex = 0;
         if(startChapterNumber) {
             const idx = currentChaptersList.findIndex(ch => ch.number === startChapterNumber);
@@ -445,6 +869,7 @@
     }
 
     window.nextChapter = function(bookId) {
+        if(currentChaptersList.length === 0) return;
         if(currentChapterIndex < currentChaptersList.length - 1) {
             currentChapterIndex++;
             renderCurrentChapter(bookId);
@@ -461,7 +886,7 @@
         }
     };
 
-    // -------------------- صفحة النشر (إنشاء كتاب) --------------------
+    // -------------------- صفحة النشر (قائمة كتب المستخدم + إنشاء جديد) --------------------
     window.toggleGenrePick = function(btn, genre) {
         btn.classList.toggle('active');
         if(btn.classList.contains('active')) {
@@ -471,70 +896,135 @@
         }
     };
 
-    function showPublishPage() { 
-        if(!currentUser) { 
-            pendingPublish = true;
-            openAuthModal(); 
-            return; 
-        }
-        selectedGenres = [];
-        const html = `<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;">
-            <h2>📝 نشر كتاب جديد</h2>
-            <div class="form-group"><label>عنوان الكتاب</label><input id="pubTitle" placeholder="مثال: أسطورة التنين"></div>
-            <div class="form-group"><label>وصف مختصر</label><textarea id="pubDesc" rows="3" placeholder="نبذة عن الكتاب..."></textarea></div>
-            <div class="form-group"><label>رابط صورة الغلاف (URL)</label><input id="pubCover" placeholder="https://example.com/cover.jpg"></div>
-            <div class="form-group"><label>التصنيفات (اختر واحداً أو أكثر)</label><div id="genresPicker" class="genres-picker"></div></div>
-            <button class="btn-primary" id="publishBookBtn" onclick="createNewBook()">✨ إنشاء الكتاب والانتقال لإدارة الفصول</button>
-        </div>`;
-        document.getElementById('publishPage').innerHTML = html;
-        const genresList = ['أكشن','فانتازيا','غموض','دراما','رومانسية','رعب','خيال علمي','مغامرات'];
-        const picker = document.getElementById('genresPicker');
-        picker.innerHTML = genresList.map(g => `<button type="button" class="genre-option" onclick="toggleGenrePick(this,'${g}')">${g}</button>`).join('');
-    }
-
-    async function createNewBook() {
+    async function showPublishPage() {
         if(!currentUser) {
-            showToast('الرجاء تسجيل الدخول أولاً');
             pendingPublish = true;
             openAuthModal();
             return;
         }
-        const publishBtn = document.getElementById('publishBookBtn');
-        if(publishBtn) {
-            publishBtn.disabled = true;
-            publishBtn.innerText = 'جاري النشر...';
-        }
-        try {
+        // جلب كتب المستخدم الحالي
+        const userBooks = allBooks.filter(book => book.authorId === currentUser.uid);
+        const booksHtml = userBooks.map(book => `
+            <div class="user-book-item">
+                <div>
+                    <strong>${escapeHtml(book.title)}</strong><br>
+                    <span style="font-size:0.8rem; color:var(--text-light);">✍️ ${escapeHtml(book.authorName)} | فصول: ${book.chaptersCount || 0}</span>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-outline" onclick="manageChapters('${book.id}')">📝 إدارة الفصول</button>
+                    <button class="btn-outline" onclick="editBook('${book.id}')">✏️ تعديل الكتاب</button>
+                </div>
+            </div>
+        `).join('');
+        const html = `
+            <div style="background:var(--surface); border-radius:1rem; padding:1.5rem;">
+                <h2>📝 لوحة النشر</h2>
+                <div style="margin:1rem 0;">
+                    <button class="btn-primary" onclick="showCreateBookForm()">✨ إنشاء كتاب جديد</button>
+                </div>
+                <h3>📚 كتبي المنشورة</h3>
+                <div class="user-books-list">
+                    ${userBooks.length ? booksHtml : '<p style="color:var(--text-light);">لا توجد كتب منشورة حتى الآن. ابدأ بإنشاء كتاب جديد!</p>'}
+                </div>
+            </div>
+        `;
+        document.getElementById('publishPage').innerHTML = html;
+        navigateTo('publish');
+    }
+
+    function showCreateBookForm() {
+        selectedGenres = [];
+        const modalHtml = `
+            <div class="modal active" id="createBookModal">
+                <div class="modal-content">
+                    <h3>📖 إنشاء كتاب جديد</h3>
+                    <div class="form-group"><label>عنوان الكتاب</label><input id="pubTitle" placeholder="مثال: أسطورة التنين"></div>
+                    <div class="form-group"><label>وصف مختصر</label><textarea id="pubDesc" rows="3" placeholder="نبذة عن الكتاب..."></textarea></div>
+                    <div class="form-group"><label>رابط صورة الغلاف (URL)</label><input id="pubCover" placeholder="https://example.com/cover.jpg"></div>
+                    <div class="form-group"><label>التصنيفات (اختر واحداً أو أكثر)</label><div id="genresPicker" class="genres-picker"></div></div>
+                    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                        <button class="btn-outline" onclick="closeModal()">إلغاء</button>
+                        <button class="btn-primary" id="createBookBtn">إنشاء الكتاب</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const genresList = ['أكشن','فانتازيا','غموض','دراما','رومانسية','رعب','خيال علمي','مغامرات'];
+        const picker = document.getElementById('genresPicker');
+        picker.innerHTML = genresList.map(g => `<button type="button" class="genre-option" onclick="toggleGenrePick(this,'${g}')">${g}</button>`).join('');
+        document.getElementById('createBookBtn').onclick = async () => {
             const title = document.getElementById('pubTitle').value.trim();
             const desc = document.getElementById('pubDesc').value.trim();
             let cover = document.getElementById('pubCover').value.trim();
-            if(!title) throw new Error('الرجاء كتابة عنوان الكتاب');
-            if(!desc) throw new Error('الرجاء كتابة وصف للكتاب');
-            if(selectedGenres.length === 0) throw new Error('الرجاء اختيار تصنيف واحد على الأقل');
+            if(!title || !desc) return showToast('العنوان والوصف مطلوبان');
+            if(selectedGenres.length === 0) return showToast('اختر تصنيفاً واحداً على الأقل');
             if(!cover) cover = 'https://picsum.photos/id/20/200/300';
             if(!cover.startsWith('http')) cover = 'https://picsum.photos/id/20/200/300';
-            
-            const bookData = {
-                title, description: desc, coverUrl: cover,
-                authorId: currentUser.uid, authorName: currentUser.displayName || currentUser.email,
-                genres: selectedGenres, views: 0, rating: 0, ratingCount: 0, chaptersCount: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            const bookRef = await db.collection('books').add(bookData);
-            showToast('✅ تم إنشاء الكتاب بنجاح!');
-            await loadBooks();
-            manageChapters(bookRef.id);
-        } catch(error) {
-            showToast('❌ فشل النشر: ' + error.message);
-        } finally {
-            if(publishBtn) {
-                publishBtn.disabled = false;
-                publishBtn.innerText = '✨ إنشاء الكتاب والانتقال لإدارة الفصول';
+            try {
+                const bookData = {
+                    title, description: desc, coverUrl: cover,
+                    authorId: currentUser.uid, authorName: currentUser.displayName || currentUser.email,
+                    genres: selectedGenres, views: 0, rating: 0, ratingCount: 0, chaptersCount: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection('books').add(bookData);
+                showToast('تم إنشاء الكتاب بنجاح');
+                closeModal();
+                await loadBooks();
+                showPublishPage();
+            } catch(e) {
+                showToast('فشل الإنشاء: '+e.message);
             }
-        }
+        };
     }
 
-    // -------------------- إدارة الفصول (التخزين في subcollection) --------------------
+    async function editBook(bookId) {
+        const book = allBooks.find(b => b.id === bookId);
+        if(!book) return;
+        selectedGenres = book.genres || [];
+        const modalHtml = `
+            <div class="modal active" id="editBookModal">
+                <div class="modal-content">
+                    <h3>✏️ تعديل الكتاب: ${escapeHtml(book.title)}</h3>
+                    <div class="form-group"><label>عنوان الكتاب</label><input id="editTitle" value="${escapeHtml(book.title)}"></div>
+                    <div class="form-group"><label>وصف مختصر</label><textarea id="editDesc" rows="3">${escapeHtml(book.description)}</textarea></div>
+                    <div class="form-group"><label>رابط صورة الغلاف (URL)</label><input id="editCover" value="${escapeHtml(book.coverUrl)}"></div>
+                    <div class="form-group"><label>التصنيفات</label><div id="editGenresPicker" class="genres-picker"></div></div>
+                    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                        <button class="btn-outline" onclick="closeModal()">إلغاء</button>
+                        <button class="btn-primary" id="saveBookEditBtn">حفظ التغييرات</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const genresList = ['أكشن','فانتازيا','غموض','دراما','رومانسية','رعب','خيال علمي','مغامرات'];
+        const picker = document.getElementById('editGenresPicker');
+        picker.innerHTML = genresList.map(g => `<button type="button" class="genre-option ${selectedGenres.includes(g)?'active':''}" onclick="toggleGenrePick(this,'${g}')">${g}</button>`).join('');
+        document.getElementById('saveBookEditBtn').onclick = async () => {
+            const newTitle = document.getElementById('editTitle').value.trim();
+            const newDesc = document.getElementById('editDesc').value.trim();
+            let newCover = document.getElementById('editCover').value.trim();
+            if(!newTitle || !newDesc) return showToast('العنوان والوصف مطلوبان');
+            if(selectedGenres.length === 0) return showToast('اختر تصنيفاً واحداً على الأقل');
+            if(!newCover) newCover = 'https://picsum.photos/id/20/200/300';
+            if(!newCover.startsWith('http')) newCover = 'https://picsum.photos/id/20/200/300';
+            try {
+                await db.collection('books').doc(bookId).update({
+                    title: newTitle, description: newDesc, coverUrl: newCover, genres: selectedGenres
+                });
+                showToast('تم تحديث الكتاب');
+                closeModal();
+                await loadBooks();
+                showPublishPage();
+            } catch(e) {
+                showToast('خطأ: '+e.message);
+            }
+        };
+    }
+
+    // -------------------- إدارة الفصول (محرر متطور) --------------------
     async function manageChapters(bookId) {
         if(!currentUser) return;
         currentBookId = bookId;
@@ -545,8 +1035,8 @@
         const html = `<div style="background:var(--surface); border-radius:1rem; padding:1.5rem;">
             <h2>📝 إدارة فصول "${escapeHtml(book.title)}"</h2>
             <button class="btn-primary" onclick="showChapterEditor('${bookId}')">+ إضافة فصل جديد</button>
-            <div id="chaptersList" style="margin-top:1rem;">${chapters.map(ch=>`<div class="chapter-item" draggable="true" data-id="${ch.id}" data-num="${ch.number}"><span>📖 الفصل ${ch.number}: ${escapeHtml(ch.title)}</span><div><button class="btn-outline" style="padding:0.2rem 0.8rem;" onclick="editChapter('${ch.id}','${bookId}')">تعديل</button><button class="btn-outline" style="padding:0.2rem 0.8rem; border-color:var(--danger); color:var(--danger);" onclick="deleteChapter('${ch.id}','${bookId}')">حذف</button></div></div>`).join('')}</div>
-            <button class="btn-outline" style="margin-top:1rem;" onclick="showBookDetail('${bookId}')">رجوع للكتاب</button>
+            <div id="chaptersList" style="margin-top:1.5rem;">${chapters.map(ch=>`<div class="chapter-item" draggable="true" data-id="${ch.id}" data-num="${ch.number}"><span>📖 الفصل ${ch.number}: ${escapeHtml(ch.title)}</span><div><button class="btn-outline" style="padding:0.2rem 0.8rem;" onclick="editChapter('${ch.id}','${bookId}')">تعديل</button><button class="btn-danger" style="padding:0.2rem 0.8rem;" onclick="deleteChapter('${ch.id}','${bookId}')">حذف</button></div></div>`).join('')}</div>
+            <button class="btn-outline" style="margin-top:1.5rem;" onclick="showBookDetail('${bookId}')">رجوع للكتاب</button>
         </div>`;
         document.getElementById('manageChaptersPage').innerHTML = html;
         navigateTo('manageChapters');
@@ -554,8 +1044,10 @@
     }
 
     function enableDragAndDrop(bookId) {
-        const items = document.querySelectorAll('#chaptersList .chapter-item');
+        const container = document.getElementById('chaptersList');
+        if(!container) return;
         let dragSrc = null;
+        const items = container.querySelectorAll('.chapter-item');
         items.forEach(item => {
             item.setAttribute('draggable', 'true');
             item.addEventListener('dragstart', e => { dragSrc = item; e.dataTransfer.effectAllowed = 'move'; });
@@ -563,7 +1055,7 @@
             item.addEventListener('drop', async e => {
                 e.preventDefault();
                 if(dragSrc && dragSrc !== item) {
-                    const parent = document.getElementById('chaptersList');
+                    const parent = container;
                     const children = [...parent.children];
                     const fromIdx = children.indexOf(dragSrc);
                     const toIdx = children.indexOf(item);
@@ -600,22 +1092,36 @@
     function openEditorModal(bookId, chapterNumber, chapterData = null) {
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.innerHTML = `<div class="modal-content" style="max-width:800px;">
+        modal.innerHTML = `<div class="modal-content" style="max-width:900px;">
             <h3>${chapterData ? '✏️ تعديل الفصل '+chapterNumber : '➕ فصل جديد رقم '+chapterNumber}</h3>
             <div class="form-group"><label>عنوان الفصل</label><input id="chapterTitle" placeholder="عنوان الفصل" value="${chapterData ? escapeHtml(chapterData.title) : ''}"></div>
-            <div class="form-group"><label>محتوى الفصل (محرر متقدم)</label><div id="editorContainer" style="height:300px;"></div></div>
+            <div class="form-group"><label>محتوى الفصل (محرر متقدم)</label><div id="editorContainer" style="height:350px;"></div></div>
             <div style="display:flex; gap:0.8rem; flex-wrap:wrap; margin-top:1rem;">
                 <button class="btn-primary" onclick="previewChapter()">👁️ معاينة</button>
-                <button class="btn-primary" onclick="saveChapterFromEditor('${bookId}',${chapterNumber},${!!chapterData},'${chapterData?.id||''}')">💾 حفظ الفصل</button>
+                <button class="btn-primary" id="saveChapterBtn">💾 حفظ الفصل</button>
                 <button class="btn-outline" onclick="closeModal()">إلغاء</button>
             </div>
-            <div id="previewArea" style="display:none; margin-top:1rem;"><h4>معاينة المحتوى:</h4><div class="preview-content"></div></div>
+            <div id="previewArea" style="display:none; margin-top:1rem;"><h4>معاينة المحتوى:</h4><div class="preview-content" style="background:var(--bg); padding:1rem; border-radius:0.8rem;"></div></div>
         </div>`;
         document.body.appendChild(modal);
+
+        // إعداد Quill متقدم
         const quill = new Quill('#editorContainer', {
             theme: 'snow',
-            placeholder: 'اكتب محتوى الفصل هنا...',
-            modules: { toolbar: [['bold','italic','underline'],['link','blockquote'],[{list:'ordered'},{list:'bullet'}],['image','clean']] },
+            placeholder: 'اكتب محتوى الفصل هنا... استخدم الأدوات للتنسيق المتقدم',
+            modules: {
+                toolbar: [
+                    [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }, { 'align': [] }],
+                    ['link', 'image', 'video', 'blockquote', 'code-block'],
+                    ['clean']
+                ]
+            },
             direction: 'rtl'
         });
         if(chapterData?.content) quill.root.innerHTML = chapterData.content;
@@ -631,31 +1137,32 @@
                 localStorage.setItem(`draft_${bookId}_${chapterNumber}`, currentQuill.root.innerHTML);
             }
         }, 3000);
+
         window.previewChapter = () => {
             const previewDiv = document.getElementById('previewArea');
             const content = currentQuill.root.innerHTML;
             document.querySelector('#previewArea .preview-content').innerHTML = DOMPurify.sanitize(content);
             previewDiv.style.display = 'block';
         };
-        window.saveChapterFromEditor = async (bId, chNum, isEdit, chId) => {
+        document.getElementById('saveChapterBtn').onclick = async () => {
             const title = document.getElementById('chapterTitle').value.trim();
             let content = currentQuill.root.innerHTML;
             if(!title || !content) { showToast('العنوان والمحتوى مطلوبان'); return; }
             content = DOMPurify.sanitize(content);
-            const chaptersRef = db.collection('books').doc(bId).collection('chapters');
-            if(isEdit && chId) {
-                await chaptersRef.doc(chId).update({ title, content, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            const chaptersRef = db.collection('books').doc(bookId).collection('chapters');
+            if(chapterData && chapterData.id) {
+                await chaptersRef.doc(chapterData.id).update({ title, content, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
             } else {
-                await chaptersRef.add({ number: chNum, title, content, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                await chaptersRef.add({ number: chapterNumber, title, content, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             }
-            localStorage.removeItem(`draft_${bId}_${chNum}`);
+            localStorage.removeItem(`draft_${bookId}_${chapterNumber}`);
             clearInterval(autoSaveInterval);
             closeModal();
             const chapCount = (await chaptersRef.get()).size;
-            await db.collection('books').doc(bId).update({ chaptersCount: chapCount });
-            showToast(isEdit ? 'تم تحديث الفصل' : 'تم نشر الفصل بنجاح');
+            await db.collection('books').doc(bookId).update({ chaptersCount: chapCount });
+            showToast(chapterData ? 'تم تحديث الفصل' : 'تم نشر الفصل بنجاح');
             await loadBooks();
-            manageChapters(bId);
+            manageChapters(bookId);
         };
     }
 
@@ -668,7 +1175,6 @@
     async function deleteChapter(chapterId, bookId) {
         if(!confirm('هل أنت متأكد من حذف هذا الفصل نهائياً؟')) return;
         await db.collection('books').doc(bookId).collection('chapters').doc(chapterId).delete();
-        // إعادة ترقيم الفصول المتبقية
         const remaining = await db.collection('books').doc(bookId).collection('chapters').orderBy('number').get();
         let newNumber = 1;
         const batch = db.batch();
@@ -697,10 +1203,6 @@
         navigateTo('profile'); 
     }
 
-    // -------------------- الوضع المظلم --------------------
-    function toggleDarkMode(){ document.body.classList.toggle('dark'); localStorage.setItem('darkMode',document.body.classList.contains('dark')); }
-    if(localStorage.getItem('darkMode')==='true') document.body.classList.add('dark');
-
     // -------------------- مستمع حالة المصادقة --------------------
     auth.onAuthStateChanged(async user => { 
         currentUser = user; 
@@ -720,19 +1222,20 @@
     window.rateBook = rateBook;
     window.showBookDetail = showBookDetail;
     window.openReaderWithChapters = openReaderWithChapters;
+    window.nextChapter = nextChapter;
+    window.previousChapter = previousChapter;
     window.addComment = addComment;
     window.manageChapters = manageChapters;
     window.showChapterEditor = showChapterEditor;
     window.editChapter = editChapter;
     window.deleteChapter = deleteChapter;
-    window.createNewBook = createNewBook;
     window.filterExplore = filterExplore;
     window.filterExploreByGenre = filterExploreByGenre;
     window.showProfile = showProfile;
-    window.toggleDarkMode = toggleDarkMode;
     window.closeModal = closeModal;
-    window.nextChapter = nextChapter;
-    window.previousChapter = previousChapter;
+    window.showCreateBookForm = showCreateBookForm;
+    window.editBook = editBook;
+    window.toggleGenrePick = toggleGenrePick;
 
     window.addEventListener('load', () => {
         if(!allBooks.length) loadBooks();
