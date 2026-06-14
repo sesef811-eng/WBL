@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>عالم بين سطور | WBL - منصة القصص الرقمية العربية</title>
+    <meta name="description" content="منصة عربية متكاملة لقراءة ونشر الكتب والروايات الرقمية">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <!-- DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="loadingSpinner" style="display:none;" class="loader-overlay"><div class="spinner"></div></div>
+
+<header>
+    <div class="header-inner">
+        <div class="logo" data-link="/">
+            <i class="fas fa-book-open"></i>
+            <strong>عالم بين سطور</strong>
+        </div>
+        <i class="fas fa-bars menu-icon" id="menuToggle"></i>
+    </div>
+</header>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-times close-sidebar" id="closeSidebar"></i>
+        <span>القائمة</span>
+    </div>
+    <div class="nav-links-side">
+        <div class="nav-link" data-link="/"><i class="fas fa-home"></i> الرئيسية</div>
+        <div class="nav-link" data-link="/explore"><i class="fas fa-compass"></i> استكشاف</div>
+        <div class="nav-link" data-link="/library"><i class="fas fa-bookmark"></i> مكتبتي</div>
+        <div class="nav-link" data-link="/publish"><i class="fas fa-feather-alt"></i> لوحة النشر</div>
+        <div class="nav-link publish-btn" data-link="/create-book"><i class="fas fa-plus-circle"></i> نشر عمل جديد</div>
+        <div class="nav-link" data-link="/about"><i class="fas fa-info-circle"></i> من نحن</div>
+        <div id="profileNavLink"></div>
+        <div id="logoutSidebar"></div>
+    </div>
+</div>
+<div class="overlay" id="sidebarOverlay"></div>
+
+<!-- Floating Action Button (نشر سريع) -->
+<div class="fab" id="fabPublish">
+    <i class="fas fa-feather-alt"></i>
+</div>
+
+<main class="container">
+    <div id="homePage" class="page"></div>
+    <div id="explorePage" class="page"></div>
+    <div id="libraryPage" class="page"></div>
+    <div id="publishPage" class="page"></div>
+    <div id="bookDetailPage" class="page"></div>
+    <div id="readerPage" class="page"></div>
+    <div id="createBookPage" class="page"></div>
+    <div id="manageChaptersPage" class="page"></div>
+    <div id="addChapterPage" class="page"></div>
+    <div id="editChapterPage" class="page"></div>
+    <div id="aboutPage" class="page"></div>
+    <div id="profilePage" class="page"></div>
+    <div id="authorPage" class="page"></div>
+</main>
+
+<footer>© 2026 عالم بين سطور (WBL) - منصة عربية للإبداع والقراءة</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
